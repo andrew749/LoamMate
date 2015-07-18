@@ -16,7 +16,7 @@ def hello():
 def login(username):
     if not mongo.db.users.find_one({"username": username}):
         user = UserModel(username)
-        mongo.db.users.insert(user.to_json())
+        mongo.db.users.insert(user.to_dict())
 
     return "done"
 
@@ -25,10 +25,11 @@ def pay_loan():
     username = request.args.get('username')
     loan_id = request.args.get('loan_id')
 
-    user = mongo.db.users.find_one({"username": username}):
+    user = mongo.db.users.find_one({"username": username})
 
     if not user:
         return
+
 
 
 @app.route('/data/requestLoan')

@@ -19,8 +19,8 @@ class UserModel():
     def add_lending_balance(self, balance):
         self.lending_balance += balance
 
-    def to_json(self):
-        user_json = {
+    def to_dict(self):
+        user_dict = {
             "username": self.username,
             "trusted": self.trusted,
             "lending_balance": self.lending_balance,
@@ -28,4 +28,4 @@ class UserModel():
             "loans_granted": self.loans_granted
         }
 
-        return json.dumps(user_json)
+        return user_dict
