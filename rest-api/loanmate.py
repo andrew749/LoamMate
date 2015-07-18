@@ -3,6 +3,7 @@ import json
 from flask import Flask
 from flask import request
 from flask.ext.pymongo import PyMongo
+from data import UserModel
 
 app = Flask(__name__)
 mongo = PyMongo(app)
@@ -13,7 +14,13 @@ def hello():
 
 @app.route('/data/login/<username>')
 def login(username):
-    return json.dumps({"message": username})
+    if mongo.db.user.find_one({"username": username}):
+        user = UserModel(username)
+        mongo.db.user.insert(user.to_json())
+    else:
+        mongo.db.find_one({"username": username})['lending_balance']
+
+    return "done"
 
 @app.route('/data/payLoan')
 def pay_loan():
