@@ -36,5 +36,11 @@ def pay_loan():
 def request_loan():
     from_user = request.args.get('from')
 
+@app.route('/data/userData/<username>')
+def get_user_data(username):
+    entry=mongo.db.user.find_one({"username":username})
+    return json.dumps({"lending_balance":entry["lending_balance"],"username":entry["username"],"loans":[{}for x in entry["loans"]]},indent=4)
+
+
 if __name__ == "__main__":
     app.run()
