@@ -1,1 +1,1 @@
-web: gunicorn loanmate:app
+web: gunicorn loanmate:app --log-file=-
