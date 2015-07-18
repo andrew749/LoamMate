@@ -1,1 +1,1 @@
-web: gunicorn rest-api:loanmate
+web: gunicorn loanmate:app
