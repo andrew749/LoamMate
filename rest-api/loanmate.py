@@ -15,21 +15,19 @@ def hello():
 def login(username):
     return json.dumps({"message": username})
 
-@app.route('data/payLoan')
+@app.route('/data/payLoan')
 def pay_loan():
-    from = request.args.get('from')
-    to = request.args.get('to')
+    from_user = request.args.get('from')
+    to_user = request.args.get('to')
     amount = request.args.get('amount')
 
-@app.route('data/requestLoan')
+@app.route('/data/requestLoan')
 def request_loan():
-    from = request.args.get('from')
+    from_user = request.args.get('from')
 
-@app.route('data/userData/<username>')
+@app.route('/data/userData/<username>')
 def get_user_data(username):
     pass
-
-
 
 if __name__ == "__main__":
     app.run()
