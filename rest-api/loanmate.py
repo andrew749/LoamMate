@@ -14,11 +14,11 @@ def hello():
 
 @app.route('/data/login/<username>')
 def login(username):
-    if mongo.db.user.find_one({"username": username}):
+    if mongo.db.users.find_one({"username": username}):
         user = UserModel(username)
-        mongo.db.user.insert(user.to_json())
+        mongo.db.users.insert(user.to_json())
     else:
-        mongo.db.find_one({"username": username})['lending_balance']
+        mongo.db.users.find_one({"username": username})['lending_balance']
 
     return "done"
 
@@ -34,7 +34,9 @@ def request_loan():
 
 @app.route('/data/userData/<username>')
 def get_user_data(username):
-    pass
+    entry=mongo.db.user.find_one({"username":username})
+    return json.dumps({"lending_balance":entry["lending_balance"],"loans":[{}for x in entry["loans"]]},indent=4)
+
 
 if __name__ == "__main__":
     app.run()
