@@ -26,7 +26,7 @@ def login(username):
         mongo.db.users.insert(user.to_dict())
     return "done"
 
-@app.route('/data/payLoan')
+@app.route('/data/payLoan',methods=['POST'])
 def pay_loan():
     username = request.args.get('username')
     loan_id = float(request.args.get('loan_id'))
