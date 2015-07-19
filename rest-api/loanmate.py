@@ -89,10 +89,12 @@ def find_chain(username, loan_id, amount, visited):
 @app.route('/data/userData/<username>')
 def get_user_data(username):
    user = mongo.db.users.find_one({"username":username})
-   resDict = {x : user[x] for x in ['username', 'lending_balance', 'loans_outstanding', 'loans_granted']}
+   if user is not None:
+       resDict = {x : user[x] for x in ['username', 'lending_balance', 'loans_outstanding', 'loans_granted']}
+   else:
+       resDict = {}
    resDict.update({"client_token": braintree.ClientToken.generate()})
    return json.dumps(resDict)
-
 
 if __name__ == "__main__":
     app.run(debug=True)
