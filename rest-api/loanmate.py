@@ -8,7 +8,6 @@ import sendgrid
 import braintree
 import uuid
 from flask import render_template
-
 braintree.Configuration.configure(braintree.Environment.Sandbox,
                                   merchant_id="wwygxtq3k3mp4cw2",
                                   public_key="k3j7655xc63f2jxx",
@@ -96,10 +95,13 @@ def pay_loan():
     user['loans_outstanding'] = loans_outstanding
     mongo.db.users.update({"username": user['username']}, {"$set": user})
     return "GREAT"
-
+@app.route('/nonce')
+def handleNonce():
+   pdb.set_trace()
+   doTransactionWithNonce(req.form["payment_method_nonce"],"10","andrew749development")
 @app.route('/indexrender')
-def renderstuff():
-    return render_template('index.html',data={"amount":request.args.get('amount'),"clienttoken":braintree.ClientToken.generate()})
+def indexRender():
+    return render_template("index.html",data={"clienttoken":braintree.ClientToken.generate(),"amount":"10"})
 
 @app.route('/data/requestLoan')
 def request_loan():
