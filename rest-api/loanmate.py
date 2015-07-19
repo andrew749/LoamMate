@@ -6,7 +6,7 @@ from flask.ext.pymongo import PyMongo
 from data import UserModel
 import sendgrid
 import braintree
-import uuid
+from uuid import uuid4
 from flask import render_template
 braintree.Configuration.configure(braintree.Environment.Sandbox,
                                   merchant_id="wwygxtq3k3mp4cw2",
@@ -66,7 +66,6 @@ def login(username):
         user = UserModel(username)
         mongo.db.users.insert(user.to_dict())
         result = createMerchantAccount(username)
-        print result.merchant_account.status
     return "Success!!!"
 
 @app.route('/data/payLoan',methods=['POST'])
@@ -109,22 +108,22 @@ def request_loan():
     amount = request.args.get('amount')
     description = request.args.get('description')
     user = mongo.db.users.find_one({"username": username})
+    pdb.set_trace()
     if not user:
         return "NO GOOD"
     trusted = user['trusted']
-    if not len(trusted):
-        return "NO GOOD"
     #need to send a bunch of emails to people asking to authenticate
-    mongo.db.users.update({"username":username},{"$set":{"loans_outstanding":user["loans_outstanding"].append({"id":uuid4(),"amount":amount,"description":description,"chains":find_chain()})}})
+    #mongo.db.users.update({"username":username},{"$set":{"loans_outstanding":user["loans_outstanding"].append({"id":uuid4(),"amount":amount,"description":description,"chains":find_chain()})}})
+    sendSendGridWithAuthRequest()
 
 
 def sendSendGridWithAuthRequest():
-    sg = sendgrid.SendGridClient('andrew749', '')
+    sg = sendgrid.SendGridClient('andrew749', 'trolololo1')
     message = sendgrid.Mail()
-    message.add_to('John Doe <john@email.com>')
+    message.add_to('John Doe <andrewcod749@gmail.com>')
     message.set_subject('Example')
-    message.set_html('Body')
-    message.set_text('Body')
+    message.set_html('Confirmation needed')
+    message.set_text('Please visit http://127.0.0.1:5000/indexrender')
     message.set_from('Doe John <doe@email.com>')
     status, msg = sg.send(message)
 
