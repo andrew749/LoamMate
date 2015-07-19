@@ -8,9 +8,9 @@ from data import UserModel
 import braintree
 
 braintree.Configuration.configure(braintree.Environment.Sandbox,
-                                  merchant_id="",
-                                  public_key="",
-                                  private_key="")
+                                  merchant_id="wwygxtq3k3mp4cw2",
+                                  public_key="k3j7655xc63f2jxx",
+                                  private_key="b97a6538608cf5bd1460c3052efde146")
 
 
 app = Flask(__name__)
