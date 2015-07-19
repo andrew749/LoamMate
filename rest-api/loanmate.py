@@ -4,8 +4,10 @@ from flask import Flask
 from flask import request
 from flask.ext.pymongo import PyMongo
 from data import UserModel
-
+import sendgrid
 import braintree
+import uuid
+from flask import render_template
 
 braintree.Configuration.configure(braintree.Environment.Sandbox,
                                   merchant_id="wwygxtq3k3mp4cw2",
@@ -18,9 +20,9 @@ def createMerchantAccount(userId):
     result = braintree.MerchantAccount.create({
         'individual': {
                 'first_name': userId,
-                'last_name': userId+"trololol",
-                'email': "andrewcod749@gmail.com",
-                'phone': "4165287547",
+                'last_name': userId,
+                'email': "example@gmail.com",
+                'phone': "555-555-5555",
                 'date_of_birth': "1981-11-19",
                 'ssn': "456-45-4567",
                 'address': {
@@ -31,8 +33,8 @@ def createMerchantAccount(userId):
                         }
             },
         'business': {
-                'legal_name': "Jane's Ladders",
-                'dba_name': "Jane's Ladders",
+                'legal_name': "MerchantAccount",
+                'dba_name': "MerchantAccount",
                 'tax_id': "98-7654321",
                 'address': {
                             'street_address': "111 Main St",
@@ -42,7 +44,7 @@ def createMerchantAccount(userId):
                         }
             },
         'funding': {
-                'descriptor': "Blue Ladders",
+                'descriptor': "Description",
                 'destination': braintree.MerchantAccount.FundingDestination.Bank,
                 'email': "funding@blueladders.com",
                 'mobile_phone': "5555555555",
@@ -54,6 +56,7 @@ def createMerchantAccount(userId):
         "id": userId
     })
     return result
+
 @app.route("/")
 def hello():
     return str(mongo.db.users.count())
@@ -64,9 +67,7 @@ def login(username):
         user = UserModel(username)
         mongo.db.users.insert(user.to_dict())
         result = createMerchantAccount(username)
-        pdb.set_trace()
         print result.merchant_account.status
-
     return "Success!!!"
 
 @app.route('/data/payLoan',methods=['POST'])
@@ -96,6 +97,10 @@ def pay_loan():
     mongo.db.users.update({"username": user['username']}, {"$set": user})
     return "GREAT"
 
+@app.route('/indexrender')
+def renderstuff():
+    return render_template('index.html',data={"amount":request.args.get('amount'),"clienttoken":braintree.ClientToken.generate()})
+
 @app.route('/data/requestLoan')
 def request_loan():
     username = request.args.get('username')
@@ -107,6 +112,36 @@ def request_loan():
     trusted = user['trusted']
     if not len(trusted):
         return "NO GOOD"
+    #need to send a bunch of emails to people asking to authenticate
+    mongo.db.users.update({"username":username},{"$set":{"loans_outstanding":user["loans_outstanding"].append({"id":uuid4(),"amount":amount,"description":description,"chains":find_chain()})}})
+
+
+def sendSendGridWithAuthRequest():
+    sg = sendgrid.SendGridClient('andrew749', '')
+    message = sendgrid.Mail()
+    message.add_to('John Doe <john@email.com>')
+    message.set_subject('Example')
+    message.set_html('Body')
+    message.set_text('Body')
+    message.set_from('Doe John <doe@email.com>')
+    status, msg = sg.send(message)
+
+def requestToken(customerid):
+    return braintree.ClientToken.generate({
+        "customer_id": customerid
+    })
+
+def doTransactionWithNonce(nonce, amount, id):
+    createTransaction(nonce,id,amount)
+
+def createTransaction(nonce, id, amount):
+    result = braintree.Transaction.sale({
+        "merchant_account_id": id,
+        "amount": amount,
+        "payment_method_nonce": nonce,
+        "service_fee_amount": "0.00"
+    })
+    return result
 
 def find_chain(username, loan_id, amount, visited):
     if username in visited:
@@ -125,13 +160,13 @@ def find_chain(username, loan_id, amount, visited):
             trusted_user['loans_granted'].append({'id': loan_id, 'amount': amount})
             trusted_user['lending_balance'] -= amount
             amount = 0
-            # mongo.db.users.update({"username": trusted_username, "$set": trusted_user})
+            mongo.db.users.update({"username": trusted_username, "$set": trusted_user})
             fin_array.append(trusted_username)
         else:
             new_amount = amount - trusted_user['lending_balance']
             trusted_user['loans_granted'].append({'id': loan_id, 'amount': amount})
             trusted_user['lending_balance'] -= amount
-            # mongo.db.users.update({"username": trusted_username, "$set": trusted_user})
+            mongo.db.users.update({"username": trusted_username, "$set": trusted_user})
             fin_array.append(trusted_username)
             acount = new_amount
     if amount > 0:

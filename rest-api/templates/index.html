@@ -1,0 +1,20 @@
+<head>
+    <script src="https://js.braintreegateway.com/v2/braintree.js"></script>
+
+</head>
+<body>
+    <form>
+        <div id="dropin-container"></div>
+        <script>
+            braintree.setup("{{data.clienttoken}}", "dropin", {
+                container: "dropin-container",
+                paypal: {
+                    singleUse: true,
+                    amount: {{data.amount}},
+                    currency: 'USD'
+                }
+            });
+
+        </script>
+    </form>
+</body>
