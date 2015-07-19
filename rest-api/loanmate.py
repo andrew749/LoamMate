@@ -12,7 +12,6 @@ braintree.Configuration.configure(braintree.Environment.Sandbox,
                                   public_key="k3j7655xc63f2jxx",
                                   private_key="b97a6538608cf5bd1460c3052efde146")
 
-
 app = Flask(__name__)
 mongo = PyMongo(app)
 
@@ -25,19 +24,15 @@ def login(username):
     if not mongo.db.users.find_one({"username": username}):
         user = UserModel(username)
         mongo.db.users.insert(user.to_dict())
-
     return "done"
 
 @app.route('/data/payLoan')
 def pay_loan():
     username = request.args.get('username')
     loan_id = float(request.args.get('loan_id'))
-
     user = mongo.db.users.find_one({"username": username})
-
     if not user:
         return "NO GOOD"
-
     loans_outstanding = user['loans_outstanding']
     for loan in loans_outstanding:
         if loan['id'] == loan_id:
@@ -47,49 +42,54 @@ def pay_loan():
                 debt_paid_user['loans_granted'] = filter(lambda x: x['id'] != loan_id, debt_paid_user['loans_granted'])
                 debt_paid_user['lending_balance'] += granted['amount']
                 mongo.db.users.update({"username": debt_paid_user['username']}, {"$set": debt_paid_user}, upsert=False)
-
     loans_outstanding = filter(lambda x: x['id'] != loan_id, loans_outstanding)
     user['loans_outstanding'] = loans_outstanding
-
     mongo.db.users.update({"username": user['username']}, {"$set": user})
-
     return "GREAT"
 
 @app.route('/data/requestLoan')
 def request_loan():
+    pdb.set_trace()
     username = request.args.get('username')
     amount = request.args.get('amount')
     user = mongo.db.users.find_one({"username": username})
-
     if not user:
         return "NO GOOD"
-
     trusted = user['trusted']
-
     if not len(trusted):
         return "NO GOOD"
-
     for trusted_user in trusted:
         trusted_user
         pass
 
-def find_chain(username, loan_id, amount):
+def find_chain(username, loan_id, amount, visited):
+    if username in visited:
+        return []
+    visited.append(username)
+    print visited
     user = mongo.db.users.find_one({"username": username})
     trusted = user['trusted']
     for trusted_username in trusted:
         trusted_user = mongo.db.users.find_one({"username": trusted_username})
-        trusted_user['lending_balance'] -= amount
-        trusted_user['loans_granted'].append({'id': loan_id, 'amount': amount})
         if trusted_user['lending_balance'] >= amount:
-            mongo.db.users.update({"username": trusted_username, "$set": trusted_user})
-            return trusted_username
+            trusted_user['loans_granted'].append({'id': loan_id, 'amount': amount})
+            trusted_user['lending_balance'] -= amount
+            # mongo.db.users.update({"username": trusted_username, "$set": trusted_user})
+            return [trusted_username]
+        else:
+            new_amount = amount - trusted_user['lending_balance']
+            trusted_user['loans_granted'].append({'id': loan_id, 'amount': amount})
+            trusted_user['lending_balance'] -= amount
+            # mongo.db.users.update({"username": trusted_username, "$set": trusted_user})
+            return [trusted_username] + find_chain(trusted_username, loan_id, new_amount, visited)
 
 
 @app.route('/data/userData/<username>')
 def get_user_data(username):
-    return braintree.ClientToken.generate()
-   # entry=mongo.db.user.find_one({"username":username})
-   # return json.dumps({"lending_balance":entry["lending_balance"],"username":entry["username"],"loans":[{}for x in entry["loans"]]},indent=4)
+   user = mongo.db.users.find_one({"username":username})
+   resDict = {x : user[x] for x in ['username', 'lending_balance', 'loans_outstanding', 'loans_granted']}
+   resDict.update({"client_token": braintree.ClientToken.generate()})
+   return json.dumps(resDict)
 
 
 if __name__ == "__main__":
