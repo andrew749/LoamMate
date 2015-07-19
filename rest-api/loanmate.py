@@ -67,13 +67,18 @@ def find_chain(username, loan_id, amount, visited):
         return []
     visited.append(username)
     user = mongo.db.users.find_one({"username": username})
+    if not user:
+        return []
     trusted = user['trusted']
     fin_array = []
     for trusted_username in trusted:
+        if amount == 0:
+            break
         trusted_user = mongo.db.users.find_one({"username": trusted_username})
         if trusted_user['lending_balance'] >= amount:
             trusted_user['loans_granted'].append({'id': loan_id, 'amount': amount})
             trusted_user['lending_balance'] -= amount
+            amount = 0
             # mongo.db.users.update({"username": trusted_username, "$set": trusted_user})
             fin_array.append(trusted_username)
         else:
@@ -82,7 +87,9 @@ def find_chain(username, loan_id, amount, visited):
             trusted_user['lending_balance'] -= amount
             # mongo.db.users.update({"username": trusted_username, "$set": trusted_user})
             fin_array.append(trusted_username)
-            fin_array += find_chain(trusted_username, loan_id, new_amount, visited)
+            acount = new_amount
+    if amount > 0:
+        fin_array += find_chain(random.choice(trusted), loan_id, amount, visited)
     return fin_array
 
 
